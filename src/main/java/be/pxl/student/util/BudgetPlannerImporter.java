@@ -22,19 +22,14 @@ public class BudgetPlannerImporter {
     private String fileName;
     private Account account;
 
-    public BudgetPlannerImporter(String filename) {
-        fileName = filename;
-        Path path = Paths.get(fileName);
-        try {
-            reader = Files.newBufferedReader(path);
-            Mapper();
-        } catch (IOException e) {
-            System.out.println("bla");
-        }
+    public BudgetPlannerImporter() {
     }
 
-    public void Mapper() {
+    public void Mapper(String filename) {
         try {
+            fileName = filename;
+            Path path = Paths.get(fileName);
+            reader = Files.newBufferedReader(path);
             String line = reader.readLine();
             line = reader.readLine();
             List<Payment> payments = new ArrayList<>();
@@ -54,7 +49,7 @@ public class BudgetPlannerImporter {
         }
     }
 
-    private Account createAccount(String line) {
+    public Account createAccount(String line) {
         String[] splitString = line.split(",");
         Account account = new Account();
         account.setIBAN(splitString[1]);
@@ -62,15 +57,13 @@ public class BudgetPlannerImporter {
         return account;
     }
 
-    private Payment createPayment(String line) {
+    public Payment createPayment(String line) {
         Payment payment;
 
         String[] splitString = line.split(",");
-        String datum;
-
-        //Sun Feb 16 22:41:04 CET 2020
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
         LocalDateTime date = LocalDateTime.parse(splitString[3], formatter);
+
         payment = new Payment(date, Float.parseFloat(splitString[4]), splitString[5], splitString[6]);
 
         return payment;
