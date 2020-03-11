@@ -8,9 +8,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -18,58 +19,56 @@ import java.util.Locale;
  * Util class to import csv file
  */
 public class BudgetPlannerImporter {
-    private BufferedReader reader;
+    //reader gebruiken om de lijnen in te lezen
+    //mapper gebruiken voor de lijnen
+    //deze objecten in een list zetten dan
     private String fileName;
-    private Account account;
-
-    public BudgetPlannerImporter() {
+    private Account account = null;
+    public static final String PATTER = "EEE MMM dd HH:mm:ss z yyyy";
+    public BudgetPlannerImporter(String fileName){
+        this.fileName = fileName;
     }
 
-    public void Mapper(String filename) {
-        try {
-            fileName = filename;
-            Path path = Paths.get(fileName);
-            reader = Files.newBufferedReader(path);
+    public Account deserialise(){
+        List<Payment> payments = new ArrayList<>();
+        Path path = Paths.get(this.fileName);
+        try (BufferedReader reader = Files.newBufferedReader(path)){
             String line = reader.readLine();
             line = reader.readLine();
-            List<Payment> payments = new ArrayList<>();
-
-            account = createAccount(line);
-
-            Payment payment;
-            while (line != null) {
-                payment = createPayment(line);
+            this.account = createAccount(line.split(","));
+            while (line != null){
+                Payment payment = createPayment(line.split(","));
                 payments.add(payment);
                 line = reader.readLine();
             }
-            account.setPayments(payments);
-
-        } catch (IOException e) {
+            reader.readLine();
+        } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
+        account.setPayments(payments);
+        return account;
     }
 
-    public Account createAccount(String line) {
-        String[] splitString = line.split(",");
+    public Account createAccount(String[] line) {
+        //Account name,Account IBAN,Counteraccount IBAN,Transaction date,Amount,Currency,Detail
         Account account = new Account();
-        account.setIBAN(splitString[1]);
-        account.setName(splitString[0]);
+        account.setName(line[0]);
+        account.setIBAN(line[1]);
         return account;
     }
 
-    public Payment createPayment(String line) {
-        Payment payment;
-
-        String[] splitString = line.split(",");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
-        LocalDateTime date = LocalDateTime.parse(splitString[3], formatter);
-
-        payment = new Payment(date, Float.parseFloat(splitString[4]), splitString[5], splitString[6]);
-
-        return payment;
+    public Payment createPayment(String[] line) throws ParseException {
+        //Account name,Account IBAN,Counteraccount IBAN,Transaction date,Amount,Currency,Detail
+        //DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss zzz yyyy", Locale.ENGLISH);
+        float account = Float.parseFloat(line[4]);
+        //LocalDateTime date = LocalDateTime.parse(line[3], dateTimeFormatter);
+        String currancy = line[5];
+        String detail = line[6];
+        return new Payment(convertToDate(line[3]), account, currancy, detail);
     }
 
-    public Account getAccount() {
-        return account;
+    public Date convertToDate(String dateString) throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(PATTER, Locale.US);
+        return dateFormat.parse(dateString);
     }
 }

@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 public class Account {
 
+    private int id;
     private String IBAN;
     private String name;
     private List<Payment> payments;
@@ -31,6 +32,14 @@ public class Account {
 
     public void setPayments(List<Payment> payments) {
         this.payments = payments;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     @Override
